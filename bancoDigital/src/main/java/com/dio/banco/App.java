@@ -1,5 +1,6 @@
 package com.dio.banco;
 
+import com.dio.banco.excecoes.ContaNaoEncontradaException;
 import com.dio.banco.excecoes.SaldoInsuficienteException;
 import com.dio.banco.model.*;
 
@@ -24,80 +25,76 @@ public class App {
 
         while (continuar) {
             System.out.println("Escolha uma opção:");
-            System.out.println("1. Depositar na Conta Corrente");
-            System.out.println("2. Sacar da Conta Corrente");
-            System.out.println("3. Ver Saldo da Conta Corrente");
-            System.out.println("4. Ver Cheque Especial Disponível");
-            System.out.println("5. Aplicar Taxa de Manutenção");
-            System.out.println("6. Depositar na Conta Poupança");
-            System.out.println("7. Calcular Rendimento Mensal da Poupança");
-            System.out.println("8. Ver Saldo da Conta Poupança");
+            System.out.println("1. Depositar");
+            System.out.println("2. Sacar");
+            System.out.println("3. Ver Saldo");
+            System.out.println("4. Aplicar Taxa de Manutencao (apenas Conta Corrente)");
+            System.out.println("5. Calcular Rendimento Mensal (apenas Conta Poupanca)");
             System.out.println("0. Sair");
 
             int opcao = scanner.nextInt();
-            double valor;
 
-            switch (opcao) {
-                case 1:
-                    System.out.print("Digite o valor para depositar na Conta Corrente: ");
-                    valor = scanner.nextDouble();
-                    contaCorrente.depositar(valor);
-                    System.out.println("Saldo atual da Conta Corrente: " + contaCorrente.getSaldo());
-                    break;
+            System.out.println("Escolha a conta: 1 para Conta Corrente, 2 para Conta Poupanca");
+            int escolhaConta = scanner.nextInt();
 
-                case 2:
-                    System.out.print("Digite o valor para sacar da Conta Corrente: ");
-                    valor = scanner.nextDouble();
-                    try {
-                        contaCorrente.sacar(valor);
-                        System.out.println("Saldo atual da Conta Corrente: " + contaCorrente.getSaldo());
-                    } catch (SaldoInsuficienteException e) {
-                        System.out.println(e.getMessage());
-                    }
-                    break;
+            Conta contaSelecionada = null;
+            try {
+                contaSelecionada = banco.buscarConta(escolhaConta);
+            } catch (ContaNaoEncontradaException e) {
+                throw new RuntimeException(e);
+            }
 
-                case 3:
-                    System.out.println("Saldo atual da Conta Corrente: " + contaCorrente.getSaldo());
-                    break;
-
-                case 4:
-                    System.out.println("Cheque especial disponível: " + contaCorrente.getChequeEspecialDisponivel());
-                    break;
-
-                case 5:
-                    contaCorrente.aplicarTaxaManutencao();
-                    System.out.println("Taxa de manutenção aplicada. Saldo atual da Conta Corrente: " + contaCorrente.getSaldo());
-                    break;
-
-                case 6:
-                    System.out.print("Digite o valor para depositar na Conta Poupança: ");
-                    valor = scanner.nextDouble();
-                    contaPoupanca.depositar(valor);
-                    System.out.println("Saldo atual da Conta Poupança: " + contaPoupanca.getSaldo());
-                    break;
-
-                case 7:
-                    contaPoupanca.calcularRendimentoMensal();
-                    System.out.println("Rendimento mensal calculado. Saldo atual da Conta Poupança: " + contaPoupanca.getSaldo());
-                    break;
-
-                case 8:
-                    System.out.println("Saldo atual da Conta Poupança: " + contaPoupanca.getSaldo());
-                    break;
-
-                case 0:
-                    continuar = false;
-                    System.out.println("Programa encerrado.");
-                    break;
-
-                default:
-                    System.out.println("Opção inválida. Tente novamente.");
-                    break;
+            try {
+                switch (opcao) {
+                    case 1:
+                        System.out.print("Digite o valor para depositar: ");
+                        double valorDeposito = scanner.nextDouble();
+                        contaSelecionada.depositar(valorDeposito);
+                        System.out.println("Saldo atual: " + contaSelecionada.getSaldo());
+                        break;
+                    case 2:
+                        System.out.print("Digite o valor para sacar: ");
+                        double valorSaque = scanner.nextDouble();
+                        contaSelecionada.sacar(valorSaque);
+                        System.out.println("Saldo atual: " + contaSelecionada.getSaldo());
+                        break;
+                    case 3:
+                        System.out.println("Saldo atual: " + contaSelecionada.getSaldo());
+                        break;
+                    case 4:
+                        if (contaSelecionada instanceof ContaCorrente) {
+                            ContaCorrente cc = (ContaCorrente) contaSelecionada;
+                            cc.aplicarTaxaManutencao();
+                            System.out.println("Taxa de manutenção aplicada. Saldo atual: " + cc.getSaldo());
+                        } else {
+                            System.out.println("Esta operação não é suportada para esta conta.");
+                        }
+                        break;
+                    case 5:
+                        if (contaSelecionada instanceof ContaPoupanca) {
+                            ContaPoupanca cp = (ContaPoupanca) contaSelecionada;
+                            cp.calcularRendimentoMensal();
+                            System.out.println("Rendimento mensal calculado. Saldo atual: " + cp.getSaldo());
+                        } else {
+                            System.out.println("Esta operação não é suportada para esta conta.");
+                        }
+                        break;
+                    case 0:
+                        System.out.println("Programa encerrado.");
+                        continuar = false;
+                        break;
+                    default:
+                        System.out.println("Opção inválida. Tente novamente.");
+                }
+            } catch (SaldoInsuficienteException e) {
+                System.out.println(e.getMessage());
+            } catch (Exception e) {
+                System.out.println("Ocorreu um erro: " + e.getMessage());
             }
         }
 
-        System.out.println(banco.buscarConta(1));
-        System.out.println(banco.buscarConta(2));
+        System.out.println("Banco: " + banco.getNome());
+        System.out.println("Contas: " + banco.getContas());
 
         scanner.close();
     }
